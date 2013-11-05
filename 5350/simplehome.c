@@ -4,6 +4,7 @@
 #include "serial.h"
 
 int main(){
-	printf("hello\n");
+	setupWireless();
 	return 0;
 }
+
