@@ -1,15 +1,16 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <pthread.h>
+#include <termios.h>
 
 #include	"nvram.h"
 
+pthread_t wireless_tid; 
 
+void *configWireless(){
+	sleep(8);
 
-
-
-void setupWireless(){
-	
 	char *ssid , *passwd;
 	char *psk="iwpriv ra0 set WPAPSK=";
 	char *iwssidcmd="iwpriv ra0 set SSID=";
@@ -46,8 +47,16 @@ void setupWireless(){
 		system(buffer);
 	}
 	free (buffer);
+	pthread_exit(NULL);
+}
 
-	//system(strcat("iwpriv ra0 set SSID=",ssid));
+void setupWireless(){
+	int ret;
+	ret = pthread_create(&wireless_tid, NULL, configWireless, NULL);
+    if (ret < 0)
+        printf("Create wireless config thread error.");
+
+	pthread_join(wireless_tid, NULL);
 	
 }
 

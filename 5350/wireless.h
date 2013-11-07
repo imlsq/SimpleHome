@@ -1,3 +1,5 @@
 
 void setupWireless();
+void *configWireless();
+
 

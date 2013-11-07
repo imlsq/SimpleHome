@@ -4,7 +4,7 @@ CFLAGS=-L/root/RT288x_SDK/source/lib/lib -I/root/RT288x_SDK/source/lib/libnvram
 ODIR=obj
 
 simplehome:simplehome.c wireless.c serial.c
-	$(CC) -o simplehome $(CFLAGS) simplehome.c wireless.c serial.c  -lnvram
+	$(CC) -o simplehome $(CFLAGS) simplehome.c wireless.c serial.c  -lnvram -lpthread
 
 romfs:
 	$(ROMFSINST) /bin/simplehome

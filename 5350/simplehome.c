@@ -5,6 +5,7 @@
 
 int main(){
 	setupWireless();
+	setupSerial();
 	return 0;
 }
 
