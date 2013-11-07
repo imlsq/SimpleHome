@@ -14,7 +14,6 @@ pthread_t read_tid;
 pthread_t write_tid;
 
 
-
 void *read_port_thread(void *argc)
 {
     int num;
@@ -208,6 +207,7 @@ void setupSerial()
     if (ret<0)
         exit(0);
 
+	
 	ret = pthread_create(&write_tid, NULL, write_port_thread, (void*)fd);
     if (ret < 0)
         printf("Create write thread error.");
@@ -216,11 +216,5 @@ void setupSerial()
 	ret = pthread_create(&read_tid, NULL, read_port_thread, (void*)fd);
     if (ret < 0)
         printf("Create read thread error.");
-
-	
-	pthread_join(write_tid, NULL);
-	
-	pthread_join(read_tid, NULL);
-	
 	
 }

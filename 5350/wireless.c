@@ -56,8 +56,6 @@ void setupWireless(){
     if (ret < 0)
         printf("Create wireless config thread error.");
 
-	pthread_join(wireless_tid, NULL);
-	
 }
 
 

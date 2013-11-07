@@ -6,6 +6,10 @@
 int main(){
 	setupWireless();
 	setupSerial();
+	while(1){
+		sleep(60);
+		printf("================oo=============");
+	}
 	return 0;
 }
 
