@@ -2,10 +2,12 @@
 
 #include "wireless.h"
 #include "serial.h"
+#include "socketserver.h"
 
 int main(){
-	setupWireless();
-	setupSerial();
+	//setupWireless();
+	//startSerial();
+	start_socket_server();
 	while(1){
 		sleep(60);
 		printf("================oo=============");

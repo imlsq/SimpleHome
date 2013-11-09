@@ -195,7 +195,7 @@ int setup_port(int fd, int speed, int data_bits, int parity, int stop_bits)
 }
 
 
-void setupSerial()
+void startSerial()
 {
     int fd;
     int ret;
