@@ -6,11 +6,10 @@
 
 int main(){
 	//setupWireless();
-	//startSerial();
+	startSerial();
 	start_socket_server();
 	while(1){
 		sleep(60);
-		printf("================oo=============");
 	}
 	return 0;
 }

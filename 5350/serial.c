@@ -8,27 +8,22 @@
 
 
 
-char *receive="";
-char *buf = "Are you going to die? \r\n";
+int serialPort;
 pthread_t read_tid; 
-pthread_t write_tid;
 
 
-void *read_port_thread(void *argc)
+void *read_port_thread()
 {
     int num;
-    char tmp[1];
-	int fd;
-    
-    fd = (int)argc;
+    char tmp[1];	
+	char *receive="";    
     while(1)
     {
-        while ((num=read(fd, tmp, 1))>0)
+        while ((num=read(serialPort, tmp, 1))>0)
         {            
             tmp[num+1] = '\0';
 			receive=tmp;
-            printf("%s",receive);
-			
+            printf("%s",receive);			
         }
 		sleep(1);
         if (num < 0) 
@@ -39,28 +34,13 @@ void *read_port_thread(void *argc)
 }
 
 
-void *write_port_thread(void *argc)
+void write_serial_port(char *buf)
 {
     int ret;
-    int fd;
     static int cnt = 1;
     char send_buf[512] = {0};
-
-    fd = (int)argc;
-
-    while (1)
-    {
-        sprintf(send_buf, "%d %s", cnt, buf);
-        printf("writing time %d... ", cnt++);
-
-        ret = write(fd, send_buf, strlen(send_buf));
-
-        if (ret < 0)
-            pthread_exit(NULL);
-        printf("write num---: %d\n", ret);
-        sleep(20);
-    }
-    pthread_exit(NULL);
+    sprintf(send_buf, "%d %s", cnt, buf);
+	ret = write(serialPort, send_buf, strlen(send_buf));
 }
 
 
@@ -207,14 +187,17 @@ void startSerial()
     if (ret<0)
         exit(0);
 
-	
+	serialPort =fd;
+
+	/*
 	ret = pthread_create(&write_tid, NULL, write_port_thread, (void*)fd);
     if (ret < 0)
         printf("Create write thread error.");
 
-	
-	ret = pthread_create(&read_tid, NULL, read_port_thread, (void*)fd);
+	*/
+	ret = pthread_create(&read_tid, NULL, read_port_thread, NULL);
     if (ret < 0)
         printf("Create read thread error.");
+		
 	
 }

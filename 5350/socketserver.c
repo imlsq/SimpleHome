@@ -9,11 +9,12 @@
 #include <pthread.h>
 
 #include "socketserver.h"
+#include "serial.h"
 
 
 #define MAX_BUFF_SIZE 256
 #define MAX_SEND_PACKET_SIZE 512
-#define MAX_CLIENT_CONNECTIONS 32
+#define MAX_CLIENT_CONNECTIONS 3
 #define MAX_PACKET_SIZE 128
 
 
@@ -27,70 +28,103 @@ void Die(char* mess)
         exit(1);
 }
 
-int send_server_time(int sockfd)
-{
-        char packet[MAX_SEND_PACKET_SIZE];
-        size_t packet_len;
 
-        time_t t = time(NULL);
-        struct tm time = *localtime(&t);
 
-        packet_len = (size_t)sprintf(packet,"Server Time: %d-%d-%d %d:%d:%d\n",
-                        time.tm_year + 1900, time.tm_mon + 1, time.tm_mday, time.tm_hour, time.tm_min, time.tm_sec);
-
-        if(send(sockfd, (const void *) packet, packet_len, 0) == packet_len)
-                return 1;
-        else{
-                Die("Failed to send the time packet to the client");
-                return -1;
-        }
-}
-
-int send_server_name(int sockfd)
-{
+int send_server_name()
+{		
+		int i=0;
         char packet[MAX_SEND_PACKET_SIZE];
         size_t packet_len;
 
         packet_len = (size_t)sprintf(packet,"Welcome to Samuel's word\n");
-
-        if(send(sockfd, (const void *) packet, packet_len, 0) == packet_len)
-                return 1;
-        else
-                Die("Failed to send the time packet to the client");
+		while(i<lst_next){
+			if(send(cli_sock_rcd_lst[i].sock, (const void *) packet, packet_len, 0) == packet_len){
+					//return 1;
+			}
+			i++;
+		}
 
         return -1;
 }
 
+int readline(int sockfd, char *response){
+    char c = '0';
+    int status = 0, i = 0;
+
+	memset(response, 0, sizeof response);
+
+    while(1){
+        status = recv(sockfd,&c, 1,0);
+        if(status <=0){
+            return -1;
+        }        
+        response[i] = c;		
+		i++;
+
+		if(c == '\n'){			
+			response[i] = '\0';
+			break;
+		}
+    }
+    return i;
+}
+
+void removeSocket(int sockefd){
+	int i;
+	i=0;
+	while(i<MAX_CLIENT_CONNECTIONS){
+		if(cli_sock_rcd_lst[i].sock == sockefd){
+			cli_sock_rcd_lst[i].sock=0;
+			lst_next--;
+			if(lst_next<0){
+				lst_next=0;
+			}
+			break;
+		}
+		i++;
+	}
+	
+	
+	i=0;
+	for(i=0;i<MAX_CLIENT_CONNECTIONS-1;i++){
+		if(cli_sock_rcd_lst[i].sock==0){
+			cli_sock_rcd_lst[i]=cli_sock_rcd_lst[i+1];
+		}
+	}
+}
+
 void* branch_from_input (void *sockfd_p)
 {
-        char pkt_header[3];
+        char response[1024];
         int sockfd = *((int*)sockfd_p);
-
-        memset(pkt_header, 0, sizeof pkt_header);
-
+		int ret;
+		
         while(1){
-                if (recv(sockfd, pkt_header, sizeof pkt_header, 0) < 0 || pkt_header[2] != '\n'){
-                        printf("packet header format error:%s\n",pkt_header);
-						
-                }else{
-                        switch(pkt_header[0]){
-                        case 'T':
-                                send_server_time(sockfd);
-                                break;
-                        case 'N':
-                                send_server_name(sockfd);
-                                break;
-                        default:
-                                printf("packet header format error\n");
-                                break;
-                        }
-                }
+				ret = readline(sockfd,response);
+				if(ret<0){
+					printf("Exit current thread:%d\n",sockfd);
+					removeSocket(sockfd);
+					pthread_exit(NULL);
+				}
+				printf("Recevice command:%s",response);
+				send_server_name();
+				if(strstr(response, "OPEN") !=NULL){
+					printf("Open action\n");
+				}else if(strstr(response, "CLOSE") !=NULL){
+					printf("Close action\n");
+				}else if(strstr(response, "GET_INFO") !=NULL){
+					printf("Get info action\n");
+				}else if(strstr(response, "SCHEDULES") !=NULL){
+					printf("Schedules action\n");
+				}
+                
         }
 }
 
 void start_socket_server()
 {
         int serv_sockfd;
+		int sock;
         struct sockaddr_in serv_addr;
 
         /* First call to socket() function */
@@ -103,27 +137,27 @@ void start_socket_server()
         serv_addr.sin_addr.s_addr = INADDR_ANY;
         serv_addr.sin_port = htons(3333);
 
+		int opt=SO_REUSEADDR;
+		setsockopt(serv_sockfd,SOL_SOCKET,SO_REUSEADDR,&opt,sizeof(opt));
+
         if (bind(serv_sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0)
                 Die("ERROR on binding");
         listen(serv_sockfd,5);
 
         while (1){
-                //FIXME problems
                 cli_sock_rcd_lst[lst_next].client_len = sizeof cli_sock_rcd_lst[lst_next].cli_addr;
-                cli_sock_rcd_lst[lst_next].sock = accept(
+                sock = accept(
                                 serv_sockfd,
                                 (struct sockaddr *) &cli_sock_rcd_lst[lst_next].cli_addr,
                                 (socklen_t*) &cli_sock_rcd_lst[lst_next].client_len
                 );
 
-                if ( cli_sock_rcd_lst[lst_next].sock < 0)
-                        Die("ERROR on accept");
-                
-                pthread_t ntid;
-                int err = pthread_create(&ntid, NULL, &branch_from_input, &cli_sock_rcd_lst[lst_next].sock);
-                lst_next++;
-                if(err < 0)
-                        Die("thread create error");
+				if(sock>0){					
+					pthread_t ntid;
+					int err = pthread_create(&ntid, NULL, &branch_from_input, &sock);
+					cli_sock_rcd_lst[lst_next].sock=sock;
+					lst_next++;
+				}
         }
         
 }
