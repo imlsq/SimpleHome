@@ -10,6 +10,7 @@
 
 #include "socketserver.h"
 #include "serial.h"
+#include "openAction.h"
 
 
 #define MAX_BUFF_SIZE 256
@@ -52,7 +53,6 @@ int readline(int sockfd, char *response){
     int status = 0, i = 0;
 
 	memset(response, 0, sizeof response);
-
     while(1){
         status = recv(sockfd,&c, 1,0);
         if(status <=0){
@@ -107,9 +107,10 @@ void* branch_from_input (void *sockfd_p)
 					pthread_exit(NULL);
 				}
 				printf("Recevice command:%s",response);
-				send_server_name();
 				if(strstr(response, "OPEN") !=NULL){
-					printf("Open action\n");
+					
+					executeOpenCmd(*response);
+
 				}else if(strstr(response, "CLOSE") !=NULL){
 					printf("Close action\n");
 				}else if(strstr(response, "GET_INFO") !=NULL){
@@ -127,11 +128,9 @@ void start_socket_server()
 		int sock;
         struct sockaddr_in serv_addr;
 
-        /* First call to socket() function */
         if ((serv_sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
                 Die("ERROR opening socket");
 
-        /* Initialize socket structure */
         memset(&serv_addr, 0, sizeof serv_addr);
         serv_addr.sin_family = AF_INET;
         serv_addr.sin_addr.s_addr = INADDR_ANY;
@@ -139,7 +138,6 @@ void start_socket_server()
 
 		int opt=SO_REUSEADDR;
 		setsockopt(serv_sockfd,SOL_SOCKET,SO_REUSEADDR,&opt,sizeof(opt));
-
         if (bind(serv_sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0)
                 Die("ERROR on binding");
         listen(serv_sockfd,5);

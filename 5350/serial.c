@@ -9,21 +9,33 @@
 
 
 int serialPort;
+
+char *receiver;
 pthread_t read_tid; 
 
 
-void *read_port_thread()
-{
-    int num;
-    char tmp[1];	
-	char *receive="";    
+void *read_port_thread(){
+    int num,i=0;
+    char tmp;
+	char serialResponse[1024*1024];
     while(1)
     {
-        while ((num=read(serialPort, tmp, 1))>0)
+        while ((num=read(serialPort, &tmp, 1))>0)
         {            
-            tmp[num+1] = '\0';
-			receive=tmp;
-            printf("%s",receive);			
+			if(i>=sizeof serialResponse){
+				i=0;
+			}
+			
+			serialResponse[i]=tmp;
+			
+			i++;
+            if(tmp=='\n'){
+				serialResponse[i]='\0';
+				i=0;
+				char tmp_receiver[strlen(serialResponse)];
+				strcpy(tmp_receiver,serialResponse);
+				receiver=tmp_receiver;
+			}		
         }
 		sleep(1);
         if (num < 0) 
@@ -34,8 +46,8 @@ void *read_port_thread()
 }
 
 
-void write_serial_port(char *buf)
-{
+
+void write_serial_port(char *buf){
     int ret;
     static int cnt = 1;
     char send_buf[512] = {0};
@@ -43,6 +55,20 @@ void write_serial_port(char *buf)
 	ret = write(serialPort, send_buf, strlen(send_buf));
 }
 
+char *syn_write_serial(char *buf, int *timeout){
+	receiver="";
+	write_serial_port(buf);
+	int step=2;
+	while(timeout>0){
+		if(receiver !=""){
+			printf("%s\n",receiver);
+			return receiver; 
+		}
+		usleep(step);
+		timeout=timeout-step;
+	}
+	return "";
+}
 
 int open_port(const char* device)
 {

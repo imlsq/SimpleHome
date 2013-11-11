@@ -1,0 +1,2 @@
+char *executeOpenCmd(char cmd);
+
