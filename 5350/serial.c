@@ -25,19 +25,17 @@ void *read_port_thread(){
 			if(i>=sizeof serialResponse){
 				i=0;
 			}
-			
-			serialResponse[i]=tmp;
-			
+			serialResponse[i]=tmp;			
 			i++;
             if(tmp=='\n'){
 				serialResponse[i]='\0';
 				i=0;
 				char tmp_receiver[strlen(serialResponse)];
 				strcpy(tmp_receiver,serialResponse);
-				receiver=tmp_receiver;
+				receiver=tmp_receiver;				
 			}		
         }
-		sleep(1);
+		
         if (num < 0) 
             pthread_exit(NULL);
      }
@@ -48,20 +46,22 @@ void *read_port_thread(){
 
 
 void write_serial_port(char *buf){
+
     int ret;
+	/*
     static int cnt = 1;
     char send_buf[512] = {0};
     sprintf(send_buf, "%d %s", cnt, buf);
-	ret = write(serialPort, send_buf, strlen(send_buf));
+	*/
+	ret = write(serialPort, buf, strlen(buf));
 }
 
-char *syn_write_serial(char *buf, int *timeout){
+const char *syn_write_serial(char *buf, int *timeout){
 	receiver="";
 	write_serial_port(buf);
 	int step=2;
 	while(timeout>0){
 		if(receiver !=""){
-			printf("%s\n",receiver);
 			return receiver; 
 		}
 		usleep(step);

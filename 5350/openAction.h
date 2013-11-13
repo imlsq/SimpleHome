@@ -1,2 +1,2 @@
-char *executeOpenCmd(char cmd);
+const char *executeOpenCmd(char *cmd);
 

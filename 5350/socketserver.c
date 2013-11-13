@@ -31,21 +31,12 @@ void Die(char* mess)
 
 
 
-int send_server_name()
-{		
+void write_socket_port(const char *buf){		
 		int i=0;
-        char packet[MAX_SEND_PACKET_SIZE];
-        size_t packet_len;
-
-        packet_len = (size_t)sprintf(packet,"Welcome to Samuel's word\n");
 		while(i<lst_next){
-			if(send(cli_sock_rcd_lst[i].sock, (const void *) packet, packet_len, 0) == packet_len){
-					//return 1;
-			}
+			send(cli_sock_rcd_lst[i].sock, buf, sizeof buf, 0);
 			i++;
 		}
-
-        return -1;
 }
 
 int readline(int sockfd, char *response){
@@ -61,8 +52,8 @@ int readline(int sockfd, char *response){
         response[i] = c;		
 		i++;
 
-		if(c == '\n'){			
-			response[i] = '\0';
+		if(c == '\n' || c=='#'){			
+			response[i] = '\0';			
 			break;
 		}
     }
@@ -96,6 +87,7 @@ void removeSocket(int sockefd){
 void* branch_from_input (void *sockfd_p)
 {
         char response[1024];
+		
         int sockfd = *((int*)sockfd_p);
 		int ret;
 		
@@ -105,12 +97,10 @@ void* branch_from_input (void *sockfd_p)
 					printf("Exit current thread:%d\n",sockfd);
 					removeSocket(sockfd);
 					pthread_exit(NULL);
-				}
-				printf("Recevice command:%s",response);
-				if(strstr(response, "OPEN") !=NULL){
-					
-					executeOpenCmd(*response);
-
+				}				
+				const char *actionResponse;
+				if(strstr(response, "OPEN") !=NULL){					
+					actionResponse = executeOpenCmd(response);
 				}else if(strstr(response, "CLOSE") !=NULL){
 					printf("Close action\n");
 				}else if(strstr(response, "GET_INFO") !=NULL){
@@ -118,7 +108,8 @@ void* branch_from_input (void *sockfd_p)
 				}else if(strstr(response, "SCHEDULES") !=NULL){
 					printf("Schedules action\n");
 				}
-                
+				printf("Action result:%s",actionResponse);
+				write_socket_port(actionResponse);                
         }
 }
 
